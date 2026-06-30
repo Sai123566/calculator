@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Income Split Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0D1117;
+      --surface:   #161B22;
+      --border:    #21262D;
+      --accent-a:  #3B82F6;   /* Munipalli – blue */
+      --accent-b:  #A78BFA;   /* Cheyeru – violet */
+      --m-color:   #34D399;   /* Brahmaji – emerald */
+      --n-color:   #FB923C;   /* Ranganath – orange */
+      --text:      #E6EDF3;
+      --muted:     #7D8590;
+      --card-glow-a: rgba(59,130,246,0.15);
+      --card-glow-b: rgba(167,139,250,0.15);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 60px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    header .eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    header h1 {
+      font-size: clamp(28px, 5vw, 46px);
+      font-weight: 700;
+      line-height: 1.15;
+      background: linear-gradient(135deg, var(--accent-a) 0%, var(--accent-b) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 480px;
+    }
+
+    /* ── Split Rule Card ── */
+    .rule-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 28px;
+      max-width: 700px;
+      width: 100%;
+      margin-bottom: 36px;
+    }
+    .rule-card h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 18px;
+      font-family: 'DM Mono', monospace;
+    }
+    .rule-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .rule-box {
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .rule-box.bank-a { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.3); }
+    .rule-box.bank-b { background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.3); }
+    .bank-label {
+      font-size: 12px;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.1em;
+    }
+    .bank-a .bank-label { color: var(--accent-a); }
+    .bank-b .bank-label { color: var(--accent-b); }
+    .rule-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+    }
+    .person-m { color: var(--m-color); font-weight: 600; }
+    .person-n { color: var(--n-color); font-weight: 600; }
+    .pct { font-family: 'DM Mono', monospace; }
+
+    /* ── Input section ── */
+    .inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      max-width: 700px;
+      width: 100%;
+      margin-bottom: 32px;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    label {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    label .bank-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
+    .tag-a { background: rgba(59,130,246,0.15); color: var(--accent-a); }
+    .tag-b { background: rgba(167,139,250,0.15); color: var(--accent-b); }
+
+    input[type="number"] {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 18px;
+      width: 100%;
+      transition: border-color 0.2s;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type="number"]:focus { border-color: var(--accent-a); }
+    .input-prefix {
+      position: relative;
+    }
+    .input-prefix span {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 16px;
+      pointer-events: none;
+    }
+    .input-prefix input { padding-left: 28px; }
+
+    /* ── Calculate Button ── */
+    .calc-btn {
+      max-width: 700px;
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+      border: none;
+      border-radius: 10px;
+      padding: 16px;
+      color: #fff;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.03em;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-bottom: 40px;
+    }
+    .calc-btn:hover { opacity: 0.9; }
+    .calc-btn:active { transform: scale(0.98); }
+
+    /* ── Results ── */
+    .results {
+      max-width: 700px;
+      width: 100%;
+      display: none;
+      flex-direction: column;
+      gap: 24px;
+      animation: fadeUp 0.4s ease;
+    }
+    .results.visible { display: flex; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .results-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* Person cards */
+    .person-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .person-card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 22px;
+      border-top: 3px solid transparent;
+    }
+    .person-card.m { border-color: var(--m-color); }
+    .person-card.n { border-color: var(--n-color); }
+
+    .person-card .name {
+      font-size: 13px;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+    }
+    .person-card.m .name { color: var(--m-color); }
+    .person-card.n .name { color: var(--n-color); }
+
+    .person-card .total {
+      font-size: 28px;
+      font-weight: 700;
+      font-family: 'DM Mono', monospace;
+      margin-bottom: 16px;
+    }
+    .person-card .breakdown {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .breakdown-row .amt {
+      font-family: 'DM Mono', monospace;
+      color: var(--text);
+    }
+    .breakdown-row .bank-pill {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-family: 'DM Mono', monospace;
+    }
+    .pill-a { background: rgba(59,130,246,0.15); color: var(--accent-a); }
+    .pill-b { background: rgba(167,139,250,0.15); color: var(--accent-b); }
+
+    /* Bank breakdown table */
+    .bank-table {
+      width:100%;
+
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .bank-table-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      padding: 12px 20px;
+      background: rgba(255,255,255,0.03);
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+    .bank-table-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      padding: 16px 20px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+    }
+    .bank-table-row:last-child { border-bottom: none; }
+    .bank-table-row .bank-name {
+      font-weight: 600;
+      font-family: 'DM Mono', monospace;
+    }
+    .bank-a-name { color: var(--accent-a); }
+    .bank-b-name { color: var(--accent-b); }
+    .val { font-family: 'DM Mono', monospace; }
+
+    /* Bar chart */
+    .bar-section {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 22px;
+    }
+    .bar-section h3 {
+      font-size: 13px;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .bar-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .bar-item { display: flex; flex-direction: column; gap: 6px; }
+    .bar-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .bar-track {
+      height: 10px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    .bar-fill.m { background: var(--m-color); }
+    .bar-fill.n { background: var(--n-color); }
+
+    /* ── Responsive ── */
+    @media (max-width: 540px) {
+      .inputs, .person-cards { grid-template-columns: 1fr; }
+      .rule-grid { grid-template-columns: 1fr; }
+      .bank-table-header, .bank-table-row {
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        font-size: 11px;
+        padding: 12px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <p class="eyebrow">Financial Toolkit</p>
+    <h1>Income Split Calculator</h1>
+    <p>Split income across Munipalli &amp; Cheyeru between Brahmaji and Ranganath using a 70/30 rule.</p>
+  </header>
+
+  <!-- Split Rule -->
+  <div class="rule-card" style="display:none;">
+    <h2>Split Rule</h2>
+    <div class="rule-grid">
+      <div class="rule-box bank-a">
+        <span class="bank-label">MUNIPALLI</span>
+        <div class="rule-row">
+          <span class="person-m">Brahmaji</span>
+          <span class="pct person-m">70%</span>
+        </div>
+        <div class="rule-row">
+          <span class="person-n">Ranganath</span>
+          <span class="pct person-n">30%</span>
+        </div>
+      </div>
+      <div class="rule-box bank-b">
+        <span class="bank-label">CHEYERU</span>
+        <div class="rule-row">
+          <span class="person-m">Brahmaji</span>
+          <span class="pct person-m">30%</span>
+        </div>
+        <div class="rule-row">
+          <span class="person-n">Ranganath</span>
+          <span class="pct person-n">70%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inputs -->
+  <div class="inputs">
+    <div class="input-group">
+      <label>Munipalli Income <span class="bank-tag tag-a">MUNIPALLI</span></label>
+      <div class="input-prefix">
+        <span>₹</span>
+        <input type="number" id="incomeA" placeholder="0" min="0" />
+      </div>
+    </div>
+    <div class="input-group">
+      <label>Cheyeru Income <span class="bank-tag tag-b">CHEYERU</span></label>
+      <div class="input-prefix">
+        <span>₹</span>
+        <input type="number" id="incomeB" placeholder="0" min="0" />
+      </div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">Calculate Split</button>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <span class="results-title">Results</span>
+
+    <!-- Person totals -->
+    <div class="person-cards" style="display:none;">
+      <div class="person-card m">
+        <div class="name">BRAHMAJI</div>
+        <div class="total" id="mTotal">₹0</div>
+        <div class="breakdown">
+          <div class="breakdown-row">
+            <span><span class="bank-pill pill-a">MUNIPALLI</span> 70%</span>
+            <span class="amt" id="mFromA">₹0</span>
+          </div>
+          <div class="breakdown-row">
+            <span><span class="bank-pill pill-b">CHEYERU</span> 30%</span>
+            <span class="amt" id="mFromB">₹0</span>
+          </div>
+        </div>
+      </div>
+      <div class="person-card n">
+        <div class="name">RANGANATH</div>
+        <div class="total" id="nTotal">₹0</div>
+        <div class="breakdown">
+          <div class="breakdown-row">
+            <span><span class="bank-pill pill-a">MUNIPALLI</span> 30%</span>
+            <span class="amt" id="nFromA">₹0</span>
+          </div>
+          <div class="breakdown-row">
+            <span><span class="bank-pill pill-b">CHEYERU</span> 70%</span>
+            <span class="amt" id="nFromB">₹0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed table -->
+    <div class="bank-table">
+      <div class="bank-table-header">
+        <span>Bank</span>
+        <span>Total Income</span>
+        <span>Brahmaji</span>
+        <span>Ranganath</span>
+      </div>
+      <div class="bank-table-row">
+        <span class="bank-name bank-a-name">MUNIPALLI</span>
+        <span class="val" id="tA">₹0</span>
+        <span class="val" id="tA_M">₹0</span>
+        <span class="val" id="tA_N">₹0</span>
+      </div>
+      <div class="bank-table-row">
+        <span class="bank-name bank-b-name">CHEYERU</span>
+        <span class="val" id="tB">₹0</span>
+        <span class="val" id="tB_M">₹0</span>
+        <span class="val" id="tB_N">₹0</span>
+      </div>
+      <div class="bank-table-row" style="background:rgba(255,255,255,0.02);">
+        <span class="bank-name" style="color:var(--muted)">TOTAL</span>
+        <span class="val" id="tAll">₹0</span>
+        <span class="val" id="tAll_M" style="color:var(--m-color)">₹0</span>
+        <span class="val" id="tAll_N" style="color:var(--n-color)">₹0</span>
+      </div>
+    </div>
+<div class="person-cards" style="margin-top:20px;">
+  <div class="person-card m">
+    <div class="name">BRAHMAJI BALANCE</div>
+    <div class="total" id="brahmajiBalance">₹0</div>
+  </div>
+  <div class="person-card n">
+    <div class="name">RANGANATH BALANCE</div>
+    <div class="total" id="ranganathBalance">₹0</div>
+  </div>
+</div>
+
+  </div>
+
+  
+<script>
+const fmt = n => '₹' + Number(n.toFixed(2)).toLocaleString('en-IN');
+
+function calculate() {
+  const x = parseFloat(document.getElementById('incomeA').value) || 0;
+  const y = parseFloat(document.getElementById('incomeB').value) || 0;
+
+  const brahmaji = (0.70 * x) + (0.30 * y);
+  const ranganath = (0.70 * y) + (0.30 * x);
+
+  let brahmajiBalance = 0;
+  let ranganathBalance = 0;
+
+  if (x > y) {
+    ranganathBalance = x - ranganath;
+  } else if (y > x) {
+    brahmajiBalance = y - brahmaji;
+  }
+
+  document.getElementById('mTotal').textContent = fmt(brahmaji);
+  document.getElementById('nTotal').textContent = fmt(ranganath);
+
+  document.getElementById('mFromA').textContent = fmt(0.70 * x);
+  document.getElementById('mFromB').textContent = fmt(0.30 * y);
+  document.getElementById('nFromA').textContent = fmt(0.30 * x);
+  document.getElementById('nFromB').textContent = fmt(0.70 * y);
+
+  document.getElementById('tA').textContent = fmt(x);
+  document.getElementById('tB').textContent = fmt(y);
+  document.getElementById('tA_M').textContent = fmt(0.70 * x);
+  document.getElementById('tA_N').textContent = fmt(0.30 * x);
+  document.getElementById('tB_M').textContent = fmt(0.30 * y);
+  document.getElementById('tB_N').textContent = fmt(0.70 * y);
+
+  document.getElementById('tAll').textContent = fmt(x + y);
+  document.getElementById('tAll_M').textContent = fmt(brahmaji);
+  document.getElementById('tAll_N').textContent = fmt(ranganath);
+
+  document.getElementById('brahmajiBalance').textContent = fmt(brahmajiBalance);
+  document.getElementById('ranganathBalance').textContent = fmt(ranganathBalance);
+
+  document.getElementById('results').classList.add('visible');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') calculate();
+});
+</script>
+
+
+</body>
+</html>
